@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nifty 500 - Broad Market Monitor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <style>
+        :root { --bg-color: #1a1b26; --card-bg-color: #24283b; --text-color: #c0caf5; --text-secondary-color: #a9b1d6; --border-color: #414868; --primary-color: #7aa2f7; --green: #9ece6a; --red: #f7768e; --blue: #7aa2f7; --cyan: #7dcfff; --yellow: #e0af68; --magenta: #bb9af7; }
+        body[data-theme="bloomberg"] { --bg-color: #0d0d0d; --card-bg-color: #1a1a1a; --text-color: #e0e0e0; --text-secondary-color: #a0a0a0; --border-color: #333333; --primary-color: #ff9900; --green: #00e676; --red: #ff5252; --blue: #2979ff; --cyan: #00e5ff; --yellow: #ffd600; --magenta: #d500f9; }
+        body[data-theme="light"] { --bg-color: #f5f7fa; --card-bg-color: #ffffff; --text-color: #1c2a42; --text-secondary-color: #5b6b85; --border-color: #e6e9f0; --primary-color: #0052cc; --green: #00875a; --red: #bf2600; --blue: #0052cc; --cyan: #00a3bf; --yellow: #ffab00; --magenta: #6554c0; }
+        body { font-family: 'Segoe UI', 'Roboto', 'Helvetica', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 10px; }
+        .container { max-width: 1600px; margin: auto; }
+        header { text-align: center; margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
+        h1 { font-size: 1.5rem; color: var(--text-color); margin: 0 0 5px 0; }
+        h2 { margin: 0; color: var(--text-secondary-color); font-weight: 500; font-size: 1rem; }
+        .card { background-color: var(--card-bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .chart-header { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px; }
+        .chart-title { font-size: 1.1rem; color: var(--text-secondary-color); font-weight: 500; }
+        .zoom-hint { font-size: 0.8rem; font-style: italic; color: #6c707a; }
+        .reset-zoom-btn { background: none; border: 1px solid var(--border-color); color: var(--text-secondary-color); padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        @media (min-width: 600px) { 
+            h1 {font-size: 1.8rem;} h2 {font-size: 1.2rem;}
+            .chart-header { flex-direction: row; justify-content: space-between; align-items: center;}
+        }
+    </style>
+</head>
+<body data-theme="bloomberg">
+    <div class="container">
+        <header>
+            <h1>Nifty 500</h1>
+            <h2>Timeframe: Daily | Lookback: 90 Periods</h2>
+        </header>
+        <div id="charts">
+            <div class="card chart-card"><div class="chart-header"><span class="chart-title">Market Trend (Sum)</span><div><span class="zoom-hint">Scroll/Drag to Zoom</span> <button class="reset-zoom-btn" data-chart-id="chart1">Reset</button></div></div><canvas id="chart1"></canvas></div>
+            <div class="card chart-card"><div class="chart-header"><span class="chart-title">Market Proportion</span><div><span class="zoom-hint">Scroll/Drag to Zoom</span> <button class="reset-zoom-btn" data-chart-id="chart2">Reset</button></div></div><canvas id="chart2"></canvas></div>
+            <div class="card chart-card"><div class="chart-header"><span class="chart-title">Market Breadth</span><div><span class="zoom-hint">Scroll/Drag to Zoom</span> <button class="reset-zoom-btn" data-chart-id="chart3">Reset</button></div></div><canvas id="chart3"></canvas></div>
+        </div>
+    </div>
+    <script>
+        window.chartData = {"labels": ["2025-06-24", "2025-06-25", "2025-06-26", "2025-06-27", "2025-06-30", "2025-07-01", "2025-07-02", "2025-07-03", "2025-07-04", "2025-07-07", "2025-07-08", "2025-07-09", "2025-07-10", "2025-07-11", "2025-07-14", "2025-07-15", "2025-07-16", "2025-07-17", "2025-07-18", "2025-07-21", "2025-07-22", "2025-07-23", "2025-07-24", "2025-07-25", "2025-07-28", "2025-07-29", "2025-07-30", "2025-07-31", "2025-08-01", "2025-08-04", "2025-08-05", "2025-08-06", "2025-08-07", "2025-08-08", "2025-08-11", "2025-08-12", "2025-08-13", "2025-08-14", "2025-08-18", "2025-08-19", "2025-08-20", "2025-08-21", "2025-08-22", "2025-08-25", "2025-08-26", "2025-08-28", "2025-08-29", "2025-09-01", "2025-09-02", "2025-09-03", "2025-09-04", "2025-09-05", "2025-09-08", "2025-09-09", "2025-09-10", "2025-09-11", "2025-09-12", "2025-09-15", "2025-09-16", "2025-09-17", "2025-09-18", "2025-09-19", "2025-09-22", "2025-09-23", "2025-09-24", "2025-09-25", "2025-09-26", "2025-09-29", "2025-09-30", "2025-10-01", "2025-10-03", "2025-10-06", "2025-10-07", "2025-10-08", "2025-10-09", "2025-10-10", "2025-10-13", "2025-10-14", "2025-10-15", "2025-10-16", "2025-10-17", "2025-10-20", "2025-10-21", "2025-10-23", "2025-10-24", "2025-10-27", "2025-10-28", "2025-10-29", "2025-10-30", "2025-10-31"], "chart1": {"trendOfStocks": [34, 182, 210, 264, 268, 196, 160, 150, 140, 102, 52, 76, 34, -80, -32, 120, 114, 124, -2, 14, -54, -6, -38, -256, -324, -214, -154, -240, -306, -230, -222, -288, -276, -350, -264, -228, -148, -162, -4, 130, 156, 120, 12, 50, -192, -276, -278, -110, -18, 106, -68, -60, -16, 10, 148, 158, 170, 198, 266, 274, 290, 210, 60, -14, -116, -200, -376, -326, -272, -146, -36, -2, 18, -100, -8, 60, -38, -170, -26, 60, -10, 44, 135, 71, 17, 73, 27, 179, 115, -27], "e9_trendOfStocks": [34.0, 63.6, 92.88, 127.10400000000001, 155.28320000000002, 163.42656000000002, 162.741248, 160.19299840000002, 156.15439872000002, 145.32351897600003, 126.65881518080003, 116.52705214464004, 100.02164171571204, 64.01731337256963, 44.81385069805571, 59.85108055844457, 70.68086444675566, 81.34469155740453, 64.67575324592362, 54.54060259673889, 32.83248207739112, 25.065985661912897, 12.452788529530316, -41.23776917637575, -97.7902153411006, -121.0321722728805, -127.6257378183044, -150.10059025464352, -181.28047220371482, -191.02437776297185, -197.2195022103775, -215.375601768302, -227.50048141464163, -252.0003851317133, -254.40030810537067, -249.12024648429653, -228.89619718743722, -215.5169577499498, -173.21356619995987, -112.57085295996791, -58.85668236797433, -23.085345894379465, -16.068276715503572, -2.8546213724028586, -40.68369709792229, -87.74695767833784, -125.79756614267026, -122.63805291413621, -101.71044233130897, -60.16835386504718, -61.73468309203775, -61.3877464736302, -52.31019717890417, -39.84815774312334, -2.2785261944986708, 29.777179044401066, 57.821743235520856, 85.8573945884167, 121.88591567073337, 152.30873253658672, 179.84698602926937, 185.8775888234155, 160.7020710587324, 125.76165684698593, 77.40932547758875, 21.927460382071004, -57.658031694343194, -111.32642535547456, -143.46114028437967, -143.96891222750372, -122.37512978200299, -98.3001038256024, -75.04008306048193, -80.03206644838555, -65.62565315870843, -40.50052252696675, -40.0004180215734, -66.00033441725873, -58.00026753380699, -34.40021402704559, -29.520171221636474, -14.816136977309181, 15.147090418152654, 26.317672334522126, 24.454137867617703, 34.16331029409417, 32.73064823527533, 61.98451858822027, 72.58761487057622, 52.67009189646098]}, "chart2": {"proportion": [0.06995884773662552, 0.37448559670781895, 0.43209876543209874, 0.5432098765432098, 0.551440329218107, 0.40329218106995884, 0.3292181069958848, 0.30864197530864196, 0.2880658436213992, 0.20987654320987653, 0.10699588477366255, 0.15637860082304528, 0.06995884773662552, -0.1646090534979424, -0.06584362139917696, 0.24691358024691357, 0.2345679012345679, 0.2551440329218107, -0.00411522633744856, 0.02880658436213992, -0.1111111111111111, -0.012345679012345678, -0.07818930041152264, -0.5267489711934157, -0.6666666666666666, -0.4403292181069959, -0.3168724279835391, -0.49382716049382713, -0.6296296296296297, -0.4732510288065844, -0.4567901234567901, -0.5925925925925926, -0.5679012345679012, -0.720164609053498, -0.5432098765432098, -0.4691358024691358, -0.3045267489711934, -0.3333333333333333, -0.00823045267489712, 0.2674897119341564, 0.32098765432098764, 0.24691358024691357, 0.024691358024691357, 0.102880658436214, -0.3950617283950617, -0.5679012345679012, -0.5720164609053497, -0.22633744855967078, -0.037037037037037035, 0.21810699588477367, -0.13991769547325103, -0.12345679012345678, -0.03292181069958848, 0.0205761316872428, 0.3045267489711934, 0.32510288065843623, 0.3497942386831276, 0.4074074074074074, 0.5473251028806584, 0.5637860082304527, 0.5967078189300411, 0.43209876543209874, 0.12345679012345678, -0.02880658436213992, -0.23868312757201646, -0.411522633744856, -0.7736625514403292, -0.6707818930041153, -0.5596707818930041, -0.3004115226337449, -0.07407407407407407, -0.00411522633744856, 0.037037037037037035, -0.205761316872428, -0.01646090534979424, 0.12345679012345678, -0.07818930041152264, -0.3497942386831276, -0.053497942386831275, 0.12345679012345678, -0.0205761316872428, 0.09053497942386832, 0.27835051546391754, 0.1463917525773196, 0.03505154639175258, 0.15051546391752577, 0.05567010309278351, 0.36907216494845363, 0.23711340206185566, -0.05567010309278351], "e9_proportion": [0.06995884773662552, 0.1308641975308642, 0.19111111111111112, 0.2615308641975309, 0.3195127572016462, 0.3362686419753087, 0.33485853497942397, 0.3296152230452676, 0.3213053471604939, 0.29901958637037046, 0.2606148460510289, 0.2397675970054322, 0.20580584715167088, 0.13172286702174824, 0.09220956933756319, 0.12315037151943327, 0.1454338774624602, 0.16737590855433032, 0.13307768157597455, 0.11222346213320762, 0.06755654748434388, 0.05157610218500597, 0.025623021665700248, -0.08485137690612293, -0.20121443485823168, -0.24903739150798454, -0.26260439880309544, -0.3088489511412418, -0.37300508683891936, -0.3930542752324524, -0.40580144487731995, -0.4431596744203745, -0.4681079864498799, -0.5185193109706036, -0.5234574240851249, -0.512593099761927, -0.4709798296037803, -0.44345053034969095, -0.35640651481473223, -0.23162726946495452, -0.12110428470776609, -0.047500711716830166, -0.03306229776852586, -0.005873706527577887, -0.08371131090107466, -0.18054929563443997, -0.2588427286886219, -0.2523416726628317, -0.20928074553767279, -0.1238031972531835, -0.12702609689719702, -0.12631223554244897, -0.10763415057387687, -0.08199209412165295, -0.004688325503083679, 0.06126991572922031, 0.11897478032000176, 0.1766613057374829, 0.250794065166118, 0.31339245377898495, 0.37005552680919623, 0.38246417453377674, 0.33066269765171274, 0.2587688412489422, 0.15927844748475048, 0.04511823123882919, -0.11863792529700251, -0.22906671883842505, -0.29518753144934085, -0.2962323296862217, -0.2518006785637922, -0.20226358811852346, -0.15440346308741137, -0.1646750338444147, -0.1350322081454906, -0.08333440849170114, -0.08230538687566544, -0.13580315723715786, -0.11934211426709254, -0.07078233338898268, -0.06074109304863471, -0.030485878554134108, 0.03128140024947622, 0.05430347071504489, 0.05045308585038643, 0.0704655614638143, 0.06750646978960814, 0.12781960882137725, 0.14967836746947294, 0.10860867335702165]}, "chart3": {"abvEMA": [260, 334, 348, 375, 377, 341, 323, 318, 313, 294, 269, 281, 260, 203, 227, 303, 300, 305, 242, 250, 216, 240, 224, 115, 81, 136, 166, 123, 90, 128, 132, 99, 105, 68, 111, 129, 169, 162, 241, 308, 321, 303, 249, 268, 147, 105, 104, 188, 234, 296, 209, 213, 235, 248, 317, 322, 328, 342, 376, 380, 388, 348, 273, 236, 185, 143, 55, 80, 107, 170, 225, 242, 252, 193, 239, 273, 224, 158, 230, 273, 238, 265, 310, 278, 251, 279, 256, 332, 300, 229], "belEMA": [226, 152, 138, 111, 109, 145, 163, 168, 173, 192, 217, 205, 226, 283, 259, 183, 186, 181, 244, 236, 270, 246, 262, 371, 405, 350, 320, 363, 396, 358, 354, 387, 381, 418, 375, 357, 317, 324, 245, 178, 165, 183, 237, 218, 339, 381, 382, 298, 252, 190, 277, 273, 251, 238, 169, 164, 158, 144, 110, 106, 98, 138, 213, 250, 301, 343, 431, 406, 379, 316, 261, 244, 234, 293, 247, 213, 262, 328, 256, 213, 248, 221, 175, 207, 234, 206, 229, 153, 185, 256], "e9AbvEMA": [260.0, 274.8, 289.44000000000005, 306.552, 320.64160000000004, 324.71328000000005, 324.3706240000001, 323.0964992000001, 321.0771993600001, 315.66175948800014, 306.32940759040014, 301.26352607232013, 293.0108208578561, 275.0086566862849, 265.4069253490279, 272.92554027922233, 278.3404322233779, 283.6723457787023, 275.33787662296186, 270.27030129836953, 259.41624103869566, 255.53299283095654, 249.22639426476525, 222.3811154118122, 194.10489232944977, 182.48391386355985, 179.1871310908479, 167.94970487267832, 152.35976389814266, 147.48781111851414, 144.39024889481132, 135.31219911584907, 129.24975929267924, 116.9998074341434, 115.79984594731474, 118.43987675785179, 128.55190140628144, 135.24152112502517, 156.39321690002015, 186.71457352001613, 213.57165881601293, 231.45732705281034, 234.96586164224829, 241.57268931379863, 222.65815145103892, 199.12652116083115, 180.10121692866494, 181.68097354293195, 192.14477883434557, 212.91582306747648, 212.1326584539812, 212.30612676318498, 216.844901410548, 223.0759211284384, 241.86073690275074, 257.8885895222006, 271.9108716177605, 285.9286972942084, 303.9429578353667, 319.1543662682934, 332.92349301463474, 335.9387944117078, 323.3510355293663, 305.880828423493, 281.70466273879447, 253.96373019103558, 214.17098415282848, 187.3367873222628, 171.26942985781025, 171.0155438862482, 181.81243510899856, 193.84994808719887, 205.4799584697591, 202.9839667758073, 210.18717342064585, 222.7497387365167, 222.99979098921338, 209.99983279137072, 213.99986623309658, 225.79989298647726, 228.23991438918182, 235.59193151134548, 250.4735452090764, 255.97883616726114, 254.9830689338089, 259.78645514704715, 259.0291641176377, 273.6233312941102, 278.89866503528816, 268.91893202823053], "netStocks": [486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 486, 485, 485, 485, 485, 485, 485, 485, 485]}};
+    </script>
+    <script>
+        
+        (function() {
+            const chartInstances = {};
+            let isSyncing = false;
+
+            document.querySelectorAll('.reset-zoom-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const chartId = e.target.getAttribute('data-chart-id');
+                    if (chartInstances[chartId]) {
+                        chartInstances[chartId].resetZoom();
+                    }
+                });
+            });
+
+            function syncCharts(sourceChart) {
+                if (isSyncing) return;
+                isSyncing = true;
+                const { min, max } = sourceChart.scales.x;
+                for (const chartId in chartInstances) {
+                    const targetChart = chartInstances[chartId];
+                    if (targetChart.canvas.id !== sourceChart.canvas.id) {
+                        targetChart.options.scales.x.min = min;
+                        targetChart.options.scales.x.max = max;
+                        targetChart.update('none');
+                    }
+                }
+                isSyncing = false;
+            }
+
+            function createCharts(data) {
+                const computedStyles = getComputedStyle(document.body);
+                const colors = {
+                    green: computedStyles.getPropertyValue('--green').trim(), red: computedStyles.getPropertyValue('--red').trim(),
+                    blue: computedStyles.getPropertyValue('--blue').trim(), cyan: computedStyles.getPropertyValue('--cyan').trim(),
+                    yellow: computedStyles.getPropertyValue('--yellow').trim(), magenta: computedStyles.getPropertyValue('--magenta').trim(),
+                    text: computedStyles.getPropertyValue('--text-color').trim(), grid: computedStyles.getPropertyValue('--border-color').trim() + '80',
+                };
+                const commonOptions = {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: colors.grid }, ticks: { color: colors.text, maxRotation: 0, autoSkip: true, maxTicksLimit: 15 }, grace: '5%' },
+                        y: { grid: { color: colors.grid }, ticks: { color: colors.text } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: colors.text, font: { size: 14 } } },
+                        tooltip: {
+                            backgroundColor: computedStyles.getPropertyValue('--card-bg-color').trim(),
+                            titleFont: { size: 16 }, bodyFont: { size: 14 }, padding: 10,
+                            borderColor: colors.grid, borderWidth: 1, titleColor: colors.text, bodyColor: colors.text,
+                        },
+                        zoom: {
+                            pan: { enabled: true, mode: 'x', onPanComplete: ({ chart }) => syncCharts(chart) },
+                            zoom: {
+                                drag: { enabled: false },
+                                wheel: { enabled: true }, 
+                                pinch: { enabled: true },
+                                mode: 'x',
+                                onZoomComplete: ({ chart }) => syncCharts(chart)
+                            }
+                        }
+                    },
+                    elements: { point: { radius: 0 } },
+                    interaction: { intersect: false, mode: 'index' }
+                };
+                const chartHeight = 450;
+                document.querySelectorAll('.chart-card canvas').forEach(c => c.parentElement.style.height = chartHeight + 'px');
+                
+                chartInstances.chart1 = new Chart(document.getElementById('chart1'), { type: 'line', data: { labels: data.labels, datasets: [{ label: 'Trend Of Stks', data: data.chart1.trendOfStocks, borderColor: colors.magenta, borderWidth: 2, tension: 0.1 }, { label: 'e9 (EMA)', data: data.chart1.e9_trendOfStocks, borderColor: colors.blue, borderWidth: 2, tension: 0.1 }] }, options: commonOptions });
+                chartInstances.chart2 = new Chart(document.getElementById('chart2'), { type: 'line', data: { labels: data.labels, datasets: [{ label: 'Proportion', data: data.chart2.proportion, borderColor: colors.yellow, borderWidth: 2, tension: 0.1 }, { label: 'e9 (EMA)', data: data.chart2.e9_proportion, borderColor: colors.blue, borderWidth: 2, tension: 0.1 }] }, options: commonOptions });
+                chartInstances.chart3 = new Chart(document.getElementById('chart3'), { type: 'line', data: { labels: data.labels, datasets: [{ label: 'Stocks Above EMA', data: data.chart3.abvEMA, borderColor: colors.green, borderWidth: 2, tension: 0.1 }, { label: 'Stocks Below EMA', data: data.chart3.belEMA, borderColor: colors.red, borderWidth: 2, tension: 0.1 }, { label: 'Net Stocks', data: data.chart3.netStocks, borderColor: colors.text, borderWidth: 1, tension: 0.1, borderDash: [5, 5] }] }, options: commonOptions });
+            }
+            createCharts(window.chartData);
+        })();
+    
+    </script>
+</body>
+</html>
